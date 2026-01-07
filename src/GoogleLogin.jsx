@@ -31,11 +31,24 @@ const GoolgeLogin = (props) => {
 	});
 
 	return (
-		<div className="App">
-			<button onClick={googleLogin}>
-				Sign in with Google
-			</button>	
-		</div>
+		<div className="App d-flex align-items-center justify-content-center min-vh-100 bg-light">
+  <div className="text-center">
+    <button
+      onClick={googleLogin}
+      className="btn btn-lg btn-outline-primary rounded-pill px-4 py-2 shadow-sm"
+      style={{ 
+        minWidth: "240px",
+        fontSize: "1.1rem",
+        transition: "all 0.2s ease"
+      }}
+      onMouseEnter={(e) => e.currentTarget.classList.add('shadow')}
+      onMouseLeave={(e) => e.currentTarget.classList.remove('shadow')}
+    >
+      <i className="bi bi-google me-2"></i>
+      Sign in with Google
+    </button>
+  </div>
+</div>
 	);
 };
 
