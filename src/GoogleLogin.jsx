@@ -1,10 +1,8 @@
-import {useState} from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { googleAuth } from "./api";
 import {useNavigate} from 'react-router-dom';
     
 const GoolgeLogin = (props) => {
-	const [user, setUser] = useState(null);
 	const navigate = useNavigate();
 	const responseGoogle = async (authResult) => {
 		try {
@@ -44,7 +42,6 @@ const GoolgeLogin = (props) => {
       onMouseEnter={(e) => e.currentTarget.classList.add('shadow')}
       onMouseLeave={(e) => e.currentTarget.classList.remove('shadow')}
     >
-      <i className="bi bi-google me-2"></i>
       Sign in with Google
     </button>
   </div>
