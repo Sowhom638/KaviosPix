@@ -35,7 +35,7 @@ function App() {
           element={<ProtectedRoute><CreateNewAlbum /></ProtectedRoute>}
         />
         <Route
-          path="/EditAlbum"
+          path="/albums/:albumId/editAlbum"
           element={<ProtectedRoute><EditAlbum /></ProtectedRoute>}
         />
         <Route
