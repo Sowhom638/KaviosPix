@@ -1,5 +1,5 @@
 # KaviosPix - Image Sharing
-An API-based image management system similar to Google Photos with authentication through Google Auth. Users can create albums, share them with others via email, and upload images with various metadata. The project will allow adding tags, comments, favorites, and person names to the images. Only image files are allowed, and thereʼs a set maximum file size per upload.
+An API-based image management system similar to Google Photos with authentication through Google Auth. Users can create albums, share them with others, and upload images with various metadata. The project will allow adding tags, comments, favorites, and person names to the images. Only image files are allowed, and thereʼs a set maximum file size per upload.
 
 Built with React frontend, Express/Node backend, Cloudinary, Google OAuth authentication and MongoDB database.
 
