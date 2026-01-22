@@ -26,8 +26,8 @@ npm run dev
 - Cloudinary
 - JWT
 - Google OAuth
-- Node JS
-- Express JS
+- Node.js
+- Express.js
 - MongoDB
 
 ---
