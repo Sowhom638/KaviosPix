@@ -92,13 +92,28 @@ export default function UploadImage() {
     "silhouette",
   ];
   function handleTag(e) {
+    // for multiple select tag
     let selectedTagValues = Array.from(
       e.target.selectedOptions,
       (option) => option.value
     );
     setTags(selectedTagValues);
+    // for multiple file upload
+    //  const selectedFiles = Array.from(e.target.files);
   }
   const handleFileChange = (e) => {
+    // For multiple image upload
+  //   const [files, setFiles] = useState([]);
+
+  // const handleFileChange = (e) => {
+  //   // Convert FileList to array
+  //   const selectedFiles = Array.from(e.target.files);
+  //   setFiles(selectedFiles);
+  // };
+
+  // files.forEach((file) => {
+  //   formData.append('images', file);
+  // });
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
