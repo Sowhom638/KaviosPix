@@ -12,14 +12,14 @@ function Header() {
   // Safe localStorage parsing with error handling
   const loadUserInfo = useCallback(() => {
     try {
-      const token = localStorage.getItem('jwtToken');
+      const token = localStorage.getItem("jwtToken");
       if (token) {
         const parsed = JSON.parse(token);
         setUserInfo(parsed);
       }
     } catch (error) {
-      console.error('Failed to parse user data:', error);
-      localStorage.removeItem('jwtToken');
+      console.error("Failed to parse user data:", error);
+      localStorage.removeItem("jwtToken");
     } finally {
       setIsLoading(false);
     }
@@ -32,12 +32,12 @@ function Header() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.user-dropdown')) {
+      if (!event.target.closest(".user-dropdown")) {
         setIsDropdownOpen(false);
       }
     };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   // Close dropdown on route change
@@ -46,31 +46,33 @@ function Header() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem('jwtToken');
+    localStorage.removeItem("jwtToken");
     setUserInfo(null);
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
-    setIsDropdownOpen(prev => !prev);
+    setIsDropdownOpen((prev) => !prev);
   };
 
   const getInitials = (name) => {
-    if (!name) return 'U';
+    if (!name) return "U";
     return name
-      .split(' ')
-      .map(part => part[0])
+      .split(" ")
+      .map((part) => part[0])
       .slice(0, 2)
-      .join('')
+      .join("")
       .toUpperCase();
   };
 
   // Loading skeleton
   if (isLoading) {
     return (
-      <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top"
-           style={{ zIndex: 1040 }}>
+      <nav
+        className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top"
+        style={{ zIndex: 1040 }}
+      >
         <div className="container-fluid px-3 px-md-4">
           <div className="navbar-brand d-flex align-items-center">
             <div className="placeholder-glow">
@@ -78,7 +80,10 @@ function Header() {
             </div>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <div className="placeholder placeholder-xs bg-secondary-subtle rounded-circle" style={{ width: '32px', height: '32px' }}></div>
+            <div
+              className="placeholder placeholder-xs bg-secondary-subtle rounded-circle"
+              style={{ width: "32px", height: "32px" }}
+            ></div>
           </div>
         </div>
       </nav>
@@ -86,8 +91,10 @@ function Header() {
   }
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top"
-         style={{ zIndex: 1040 }}>
+    <nav
+      className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top"
+      style={{ zIndex: 1040 }}
+    >
       <div className="container-fluid px-3 px-md-4">
         {/* Brand Logo */}
         <Link
@@ -115,16 +122,26 @@ function Header() {
         </button>
 
         {/* Navbar Content */}
-        <div className="collapse navbar-collapse justify-content-end" id="navbarContent" style={{ overflow: 'visible' }}>
+        <div
+          className="collapse navbar-collapse justify-content-end"
+          id="navbarContent"
+          style={{ overflow: "visible" }}
+        >
           {userInfo ? (
             <div className="d-flex align-items-center gap-2 gap-md-3">
               {/* Welcome Message - Desktop Only */}
               <span className="d-none d-md-inline navbar-text text-muted small fw-medium">
-                Welcome, <span className="text-dark fw-semibold">{userInfo.name?.split(' ')[0] || 'User'}</span>
+                Welcome,{" "}
+                <span className="text-dark fw-semibold">
+                  {userInfo.name?.split(" ")[0] || "User"}
+                </span>
               </span>
 
               {/* User Dropdown */}
-              <div className="user-dropdown position-relative" style={{ zIndex: 1050 }}>
+              <div
+                className="user-dropdown position-relative"
+                style={{ zIndex: 1050 }}
+              >
                 <button
                   className="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-2 border-0"
                   onClick={toggleDropdown}
@@ -134,58 +151,75 @@ function Header() {
                 >
                   {/* Avatar */}
                   <div className="avatar-container position-relative">
-                    <div className="avatar bg-primary-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-semibold shadow-sm"
-                         style={{ width: '40px', height: '40px', fontSize: '0.9rem' }}>
+                    <div
+                      className="avatar bg-primary-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-semibold shadow-sm"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        fontSize: "0.9rem",
+                      }}
+                    >
                       {userInfo.avatar ? (
-                        <img 
-                          src={userInfo.avatar} 
+                        <img
+                          src={userInfo.avatar}
                           alt={userInfo.name}
                           className="rounded-circle object-fit-cover w-100 h-100"
                           onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
                           }}
                         />
                       ) : null}
-                      <span className={userInfo.avatar ? 'd-none' : 'd-flex'}>
+                      <span className={userInfo.avatar ? "d-none" : "d-flex"}>
                         {getInitials(userInfo.name)}
                       </span>
                     </div>
-                    <span className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" 
-                          style={{ width: '12px', height: '12px' }}
-                          title="Online"></span>
+                    <span
+                      className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle"
+                      style={{ width: "12px", height: "12px" }}
+                      title="Online"
+                    ></span>
                   </div>
-                  
+
                   {/* Caret */}
-                  <i className={`bi bi-chevron-down transition-transform small text-muted ${isDropdownOpen ? 'rotate-180' : ''}`} 
-                     style={{ transition: 'transform 0.2s ease' }}></i>
+                  <i
+                    className={`bi bi-chevron-down transition-transform small text-muted ${isDropdownOpen ? "rotate-180" : ""}`}
+                    style={{ transition: "transform 0.2s ease" }}
+                  ></i>
                 </button>
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="dropdown-menu dropdown-menu-end shadow border-0 mt-2 animate-fadeIn show" 
-                       style={{ 
-                         minWidth: '220px', 
-                         animation: 'fadeIn 0.2s ease',
-                         zIndex: 1060,
-                         overflow: 'visible'  // 👈 KEY FIX: Allow content to show
-                       }}>
-                    
+                  <div
+                    className="dropdown-menu shadow border-0 mt-2 animate-fadeIn show"
+                    style={{
+                      maxWidth: "20px",
+                      animation: "fadeIn 0.2s ease",
+                      zIndex: 1060,
+                      overflow: "visible",
+                      right: "auto",
+                      left: "0",
+                    }}
+                  >
                     {/* User Info Header */}
                     <div className="dropdown-item-text py-3 px-3 border-bottom bg-light-subtle">
-                      <p className="mb-0 fw-semibold text-dark small">{userInfo.name}</p>
-                      <p className="mb-0 text-muted small">{userInfo.email}</p>
+                      <p className="mb-0 fw-semibold text-dark small">
+                        {userInfo.name}
+                      </p>
                     </div>
-                    
+
                     {/* Menu Items */}
-                    <Link to="/dashboard" className="dropdown-item d-flex align-items-center gap-2 py-2">
+                    <Link
+                      to="/dashboard"
+                      className="dropdown-item d-flex align-items-center gap-2 py-2"
+                    >
                       <i className="bi bi-grid-3x3-gap text-muted"></i>
                       <span>Dashboard</span>
                     </Link>
                     <div className="dropdown-divider my-2"></div>
-                    
+
                     {/* Logout - Now visible! */}
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="dropdown-item d-flex align-items-center gap-2 py-2 text-danger fw-medium"
                     >
@@ -210,8 +244,9 @@ function Header() {
                 to="/signup"
                 className="btn btn-primary btn-sm px-3 py-2 fw-medium d-flex align-items-center gap-2 shadow-sm hover-lift"
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  border: 'none'
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  border: "none",
                 }}
               >
                 <i className="bi bi-person-plus"></i>
