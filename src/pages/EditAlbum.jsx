@@ -1,10 +1,23 @@
-import { useEffect, useState } from "react";
+// frontend/components/EditAlbum.jsx
+import { useEffect, useState, useMemo } from "react";
 import Header from "../components/Header";
 import useFetch from "../useFetch";
+import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
-import { toast, ToastContainer } from "react-toastify";
+import { 
+  FaArrowLeft, 
+  FaUsers,
+  FaCheck, 
+  FaTimes,
+  FaSearch
+} from "react-icons/fa";
+import { 
+  MdOutlineDescription, 
+  MdPersonAdd, 
+  MdClose,
+  MdAccessTime
+} from "react-icons/md";
 
 export default function EditAlbum() {
   const [name, setName] = useState("");
@@ -12,188 +25,546 @@ export default function EditAlbum() {
   const [sharedUsers, setSharedUsers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const navigate = useNavigate();  
+  const [userSearch, setUserSearch] = useState("");
+  const [originalData, setOriginalData] = useState(null);
+  const navigate = useNavigate();
   const { albumId } = useParams();
   const [userInfo, setUserInfo] = useState(null);
-    useEffect(() => {
-      const data = localStorage.getItem("jwtToken");
-      const userDetails = JSON.parse(data);
-      setUserInfo(userDetails);
-    }, []);
-    const {
-      data: usersList,
-      loading: userLoading,
-      error: userError,
-    } = useFetch(`${import.meta.env.VITE_API_BASE_URL}/users`);
-  
-    const userData =
-      usersList?.users && usersList?.users?.length > 0
-        ? usersList?.users?.find((user) => user.email === userInfo.email)
-        : {};
-  const ownerId = userData?._id;
-    const { data: selectedAlbum } = useFetch(
-      `${import.meta.env.VITE_API_BASE_URL}/albums/${albumId}`
-    );
 
-  useEffect(()=>{
-    if(selectedAlbum && selectedAlbum?.album){
-        setName(selectedAlbum?.album?.name || "");
-        setDescription(selectedAlbum?.album?.description || "");
-        setSharedUsers(selectedAlbum?.album?.sharedUsers.map((sharedUser)=>sharedUser._id) || []);
+  // Load user info safely
+  useEffect(() => {
+    try {
+      const data = localStorage.getItem("jwtToken");
+      if (data) {
+        const userDetails = JSON.parse(data);
+        setUserInfo(userDetails);
+      }
+    } catch (error) {
+      console.error('Failed to load user info:', error);
+      localStorage.removeItem('jwtToken');
+      navigate('/login');
     }
-  },[selectedAlbum, albumId])
-  const users = usersList?.users?.filter((user) => user?._id != ownerId) || [];
-  function handleUser(e) {
-    let selectedUserValues = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value
+  }, [navigate]);
+
+  // Fetch data
+  const {  data: usersList, loading: userLoading, error: userError } = useFetch(`${import.meta.env.VITE_API_BASE_URL}/users`);
+  const {  data: selectedAlbum, loading: albumLoading, error: albumError, refetch } = useFetch(`${import.meta.env.VITE_API_BASE_URL}/albums/${albumId}`);
+
+  // Memoized data
+  const userData = useMemo(() => {
+    if (!usersList?.users || !userInfo?.email) return null;
+    return usersList.users.find(user => user.email === userInfo.email);
+  }, [usersList, userInfo]);
+
+  const ownerId = userData?._id;
+  
+  const availableUsers = useMemo(() => {
+    if (!usersList?.users) return [];
+    return usersList.users
+      .filter(user => user?._id !== ownerId)
+      .filter(user => 
+        user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+        user.email?.toLowerCase().includes(userSearch.toLowerCase())
+      );
+  }, [usersList, ownerId, userSearch]);
+
+  // Load album data into form
+  useEffect(() => {
+    if (selectedAlbum?.album) {
+      setName(selectedAlbum.album.name || "");
+      setDescription(selectedAlbum.album.description || "");
+      const userIds = selectedAlbum.album.sharedUsers?.map(u => u._id) || [];
+      setSharedUsers(userIds);
+      setOriginalData({
+        name: selectedAlbum.album.name,
+        description: selectedAlbum.album.description,
+        sharedUsers: userIds
+      });
+    }
+  }, [selectedAlbum]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!originalData) return false;
+    return (
+      name !== originalData.name ||
+      description !== originalData.description ||
+      JSON.stringify(sharedUsers.sort()) !== JSON.stringify(originalData.sharedUsers.sort())
     );
-    setSharedUsers(selectedUserValues);
-  }
-  const newData = {
-    name,
-    description,
-    sharedUsers,
+  }, [name, description, sharedUsers, originalData]);
+
+  // Handlers
+  const toggleUser = (userId) => {
+    setSharedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId) 
+        : [...prev, userId]
+    );
   };
 
-  async function handleUpdateAlbum(e) {
+  const removeUser = (userId, e) => {
+    e.stopPropagation();
+    setSharedUsers(prev => prev.filter(id => id !== userId));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!name.trim() || !description.trim()) {
+      toast.warning("Please fill in all required fields");
+      return;
+    }
+
+    if (!hasChanges) {
+      toast.info("No changes to save");
+      return;
+    }
+
     setIsSubmitting(true);
+    setSubmitError(null);
+    
+    const newData = {
+      name: name.trim(),
+      description: description.trim(),
+      sharedUsers
+    };
 
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/albums/${albumId}`,
         newData
       );
-      console.log(response.data);
-      toast.success("Album is updated!");
-      setName("");
-      setDescription("");
-      setSharedUsers([]);
-      setTimeout(() => navigate(`/albums/${albumId}`), 700);
+      console.log('Album updated:', response.data);
+      toast.success("✅ Album updated successfully!");
+      
+      // Update original data to match new state
+      setOriginalData({
+        name: name.trim(),
+        description: description.trim(),
+        sharedUsers: [...sharedUsers]
+      });
+      
+      // Navigate after delay
+      setTimeout(() => navigate(`/albums/${albumId}`), 1000);
     } catch (error) {
       setSubmitError(error);
-      toast.warning(error);
+      toast.error(error.response?.data?.message || "Failed to update album");
     } finally {
       setIsSubmitting(false);
     }
-  }
-  return (
-    <>
-      <div className="container mt-4">
-        <Header />
-        <div className="card shadow-sm border rounded-3 mt-4">
-          <div className="card-body p-0">
-            <div className="row g-0">
-              {/* Sidebar */}
-              <div className="col-md-2 border-end bg-light">
-                <div className="p-3">
-                  <h6 className="text-secondary fw-bold mb-3">Sidebar</h6>
-                  <Link
-                    to="/dashboard"
-                    className="btn btn-warning text-decoration-none d-block p-2 rounded hover-bg"
-                  >
-                    <FaArrowLeft /> Back
-                  </Link>
+  };
+
+  const handleCancel = () => {
+    if (hasChanges) {
+      if (window.confirm("You have unsaved changes. Discard and go back?")) {
+        navigate(`/albums/${albumId}`);
+      }
+    } else {
+      navigate(`/albums/${albumId}`);
+    }
+  };
+
+  // Loading Skeletons
+  if (albumLoading || userLoading) {
+    return (
+      <div className="container-fluid bg-light min-vh-100 py-4">
+        <div className="container">
+          <Header />
+          <div className="row g-4 mt-4">
+            <div className="col-lg-3">
+              <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div className="placeholder-glow p-4">
+                  <span className="placeholder col-6 bg-secondary-subtle rounded-pill mb-3 d-block"></span>
+                  <span className="placeholder col-12 bg-secondary-subtle rounded-3" style={{height:'44px'}}></span>
                 </div>
               </div>
-
-              {/* Main Content */}
-              <div className="col-md-9 p-4">
-                <h1 className="my-2">Edit Album Details</h1>
-                {submitError && (
-                  <div className="alert alert-danger">
-                    {JSON.stringify(submitError)}
+            </div>
+            <div className="col-lg-9">
+              <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div className="card-body p-4 p-md-5">
+                  <span className="placeholder col-5 bg-secondary-subtle rounded-pill mb-4 d-block"></span>
+                  <div className="d-flex flex-column gap-4">
+                    {[1,2,3].map(i => (
+                      <div key={i}>
+                        <span className="placeholder col-3 bg-secondary-subtle rounded mb-2 d-block"></span>
+                        <span className="placeholder col-12 bg-secondary-subtle rounded-3" style={{height:'48px'}}></span>
+                      </div>
+                    ))}
+                    <span className="placeholder col-4 bg-secondary-subtle rounded-3" style={{height:'44px'}}></span>
                   </div>
-                )}
-                <form onSubmit={handleUpdateAlbum}>
-                  <div className="mb-3">
-                    <label htmlFor="name" className="form-label">
-                      Name<span className="text-danger fs-5">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="name"
-                      name="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="description" className="form-label">
-                      Description<span className="text-danger fs-5">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="description"
-                      name="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="sharedUsers" className="form-label">
-                      Shared Users<span className="text-danger fs-5">*</span>
-                    </label>
-                    <select
-                      type="text"
-                      className="form-control"
-                      id="sharedUsers"
-                      name="sharedUsers"
-                      value={sharedUsers}
-                      onChange={handleUser}
-                      required
-                      multiple
-                    >
-                      <option disabled>--Select users--</option>
-                      {userLoading ? (
-                        <option disabled>Loading users...</option>
-                      ) : userError ? (
-                        <option disabled>{userError}</option>
-                      ) : users.length > 0 ? (
-                        users.map((userItem) => (
-                          <option key={userItem._id} value={userItem._id}>
-                            {userItem.name}
-                          </option>
-                        ))
-                      ) : (
-                        <option disabled>No users available</option>
-                      )}
-                    </select>
-                    <small className="form-text text-muted">
-                      Hold <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> to select multiple
-                      tags.
-                    </small>
-                  </div>
-                  <button
-                    disabled={isSubmitting}
-                    className="btn btn-primary"
-                    type="submit"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        Updating...
-                      </>
-                    ) : (
-                      "Update Album"
-                    )}
-                  </button>
-                </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <ToastContainer position="bottom-right" />
-    </>
+    );
+  }
+
+  // Error State
+  if (albumError) {
+    return (
+      <div className="container-fluid bg-light min-vh-100 py-4">
+        <div className="container">
+          <Header />
+          <div className="card border-0 shadow-sm rounded-4 overflow-hidden mt-4">
+            <div className="card-body p-5 text-center">
+              <div className="bg-danger-subtle text-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                   style={{ width: '80px', height: '80px' }}>
+                <MdClose className="fs-1" />
+              </div>
+              <h4 className="fw-bold text-dark mb-2">Failed to load album</h4>
+              <p className="text-muted mb-4">{albumError}</p>
+              <div className="d-flex gap-3 justify-content-center">
+                <button onClick={() => refetch()} className="btn btn-outline-primary px-4 py-2 rounded-3">
+                  Retry
+                </button>
+                <Link to="/dashboard" className="btn btn-secondary px-4 py-2 rounded-3">
+                  Back to Dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not Found State
+  if (!selectedAlbum?.album) {
+    return (
+      <div className="container-fluid bg-light min-vh-100 py-4">
+        <div className="container">
+          <Header />
+          <div className="card border-0 shadow-sm rounded-4 overflow-hidden mt-4">
+            <div className="card-body p-5 text-center">
+              <div className="bg-light-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                   style={{ width: '80px', height: '80px' }}>
+              </div>
+              <h4 className="fw-bold text-dark mb-2">Album not found</h4>
+              <p className="text-muted mb-4">This album may have been deleted</p>
+              <Link to="/dashboard" className="btn btn-primary px-4 py-2 rounded-3">
+                Back to Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container-fluid bg-light min-vh-100 py-4">
+      <div className="container">
+        <Header />
+        
+        <div className="row g-4 mt-4">
+          
+          {/* ✨ Sidebar */}
+          <aside className="col-lg-3">
+            <div className="card border-0 shadow-sm rounded-4 overflow-hidden sidebar-sticky">
+              <div className="card-header bg-gradient-primary text-white border-0 py-4 px-4">
+                <h5 className="mb-0 fw-semibold d-flex align-items-center gap-2">
+                  <span>Edit Album</span>
+                </h5>
+                <p className="mb-0 small opacity-75 mt-1">Update details</p>
+              </div>
+              
+              <div className="card-body p-4">
+                <Link 
+                  to={`/albums/${albumId}`}
+                  className="btn btn-outline-secondary w-100 mb-4 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2 fw-medium hover-lift"
+                >
+                  <FaArrowLeft className="fs-5" />
+                  <span>Back to Album</span>
+                </Link>
+
+                {/* Album Info */}
+                <div className="bg-light-subtle rounded-3 p-4 mb-4">
+                  <h6 className="fw-semibold text-dark mb-3 small">Current Details</h6>
+                  <div className="small">
+                    <p className="mb-2">
+                      <span className="text-muted d-block">Name</span>
+                      <span className="fw-medium">{selectedAlbum.album.name}</span>
+                    </p>
+                    <p className="mb-0">
+                      <span className="text-muted d-block">Shared with</span>
+                      <span className="fw-medium">{selectedAlbum.album.sharedUsers?.length || 0} users</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Change Indicator */}
+                <div className={`rounded-3 p-3 d-flex align-items-center gap-2 small fw-medium ${
+                  hasChanges ? 'bg-success-subtle text-success' : 'bg-light text-muted'
+                }`}>
+                  {hasChanges ? <FaCheck className="fs-6" /> : <MdAccessTime className="fs-6" />}
+                  <span>{hasChanges ? 'Changes ready to save' : 'No changes yet'}</span>
+                </div>
+
+                {/* Quick Tips */}
+                <div className="mt-4 pt-4 border-top">
+                  <h6 className="text-secondary fw-bold mb-3 small text-uppercase tracking-wide">💡 Tips</h6>
+                  <ul className="list-unstyled small text-muted mb-0" style={{lineHeight:'1.6'}}>
+                    <li className="mb-2">• Changes save instantly</li>
+                    <li className="mb-2">• Remove users to revoke access</li>
+                    <li>• Keep descriptions clear & helpful</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* ✨ Main Form */}
+          <main className="col-lg-9">
+            <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+              <div className="card-body p-4 p-md-5">
+                
+                {/* Header */}
+                <div className="mb-5">
+                  <h3 className="fw-bold text-dark mb-2">Edit Album Details</h3>
+                  <p className="text-muted mb-0">Update the name, description, or sharing settings</p>
+                </div>
+
+                {/* Error Alert */}
+                {submitError && (
+                  <div className="alert alert-danger border-0 shadow-sm rounded-3 d-flex align-items-start gap-3 mb-4" role="alert">
+                    <i className="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
+                    <div>
+                      <h6 className="alert-heading mb-1">Failed to update album</h6>
+                      <p className="mb-0 small">{submitError.response?.data?.message || submitError.message || "An error occurred"}</p>
+                    </div>
+                    <button 
+                      onClick={() => setSubmitError(null)}
+                      className="btn btn-link text-danger p-0 ms-auto"
+                    >
+                      <MdClose className="fs-5" />
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                  
+                  {/* Album Name */}
+                  <div className="mb-4">
+                    <label htmlFor="name" className="form-label fw-semibold text-dark d-flex align-items-center gap-2">
+                      Album Name <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control form-control-lg rounded-3 border-light-subtle shadow-sm focus-ring focus-ring-primary py-3"
+                      id="name"
+                      placeholder="e.g., Summer Vacation 2024"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                    <small className="form-text text-muted mt-2">
+                      Choose a clear, descriptive name for your album
+                    </small>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-4">
+                    <label htmlFor="description" className="form-label fw-semibold text-dark d-flex align-items-center gap-2">
+                      <MdOutlineDescription className="text-primary" />
+                      Description <span className="text-danger">*</span>
+                    </label>
+                    <textarea
+                      className="form-control form-control-lg rounded-3 border-light-subtle shadow-sm focus-ring focus-ring-primary py-3"
+                      id="description"
+                      placeholder="Tell us about this album..."
+                      rows="4"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                      style={{ resize: 'vertical', minHeight: '120px' }}
+                    />
+                    <small className="form-text text-muted mt-2">
+                      Add details like location, event, or memories to capture
+                    </small>
+                  </div>
+
+                  {/* Share with Users */}
+                  <div className="mb-5">
+                    <label className="form-label fw-semibold text-dark d-flex align-items-center gap-2">
+                      <FaUsers className="text-primary" />
+                      Share with Users <span className="text-danger">*</span>
+                    </label>
+                    
+                    {/* Search Box */}
+                    <div className="position-relative mb-3">
+                      <FaSearch className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" />
+                      <input
+                        type="text"
+                        className="form-control rounded-3 border-light-subtle shadow-sm ps-5 py-2"
+                        placeholder="Search users by name or email..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    {/* Selected Users Chips */}
+                    {sharedUsers.length > 0 && (
+                      <div className="d-flex flex-wrap gap-2 mb-3">
+                        {sharedUsers.map(userId => {
+                          const user = usersList?.users?.find(u => u._id === userId);
+                          if (!user) return null;
+                          return (
+                            <span 
+                              key={userId}
+                              className="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 d-flex align-items-center gap-2 fw-medium"
+                            >
+                              {user.name}
+                              <button
+                                type="button"
+                                onClick={(e) => removeUser(userId, e)}
+                                className="btn btn-link text-primary p-0 lh-1"
+                                disabled={isSubmitting}
+                                aria-label={`Remove ${user.name}`}
+                              >
+                                <FaTimes size={12} />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* User Selection Grid */}
+                    <div className="border rounded-3 p-3 bg-light-subtle" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {userError ? (
+                        <p className="text-danger small mb-0">Failed to load users</p>
+                      ) : availableUsers.length > 0 ? (
+                        <div className="d-flex flex-wrap gap-2">
+                          {availableUsers.map(user => {
+                            const isSelected = sharedUsers.includes(user._id);
+                            return (
+                              <button
+                                key={user._id}
+                                type="button"
+                                onClick={() => toggleUser(user._id)}
+                                disabled={isSubmitting}
+                                className={`btn px-3 py-2 rounded-3 d-flex align-items-center gap-2 transition-all small fw-medium ${
+                                  isSelected 
+                                    ? 'btn-primary shadow-sm' 
+                                    : 'btn-outline-secondary bg-white hover-bg'
+                                }`}
+                                aria-pressed={isSelected}
+                              >
+                                {isSelected ? <FaCheck size={14} /> : <MdPersonAdd size={16} />}
+                                <span>{user.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-muted small mb-0">
+                          {userSearch ? 'No users match your search' : 'No other users available to share with'}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <small className="form-text text-muted mt-2 d-block">
+                      Select users who can view and contribute to this album
+                    </small>
+                  </div>
+
+                  {/* Submit Buttons */}
+                  <div className="d-flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCancel}
+                      className="btn btn-outline-secondary px-4 py-3 rounded-3 fw-medium hover-lift"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !hasChanges || !name.trim() || !description.trim()}
+                      className={`btn px-5 py-3 rounded-3 fw-medium d-flex align-items-center gap-2 shadow-lg hover-lift flex-grow-1 ${
+                        hasChanges 
+                          ? 'btn-primary' 
+                          : 'btn-secondary disabled'
+                      }`}
+                      style={hasChanges ? {
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none'
+                      } : {}}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm" role="status"></span>
+                          <span>Updating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Update Album</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                </form>
+
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <ToastContainer position="bottom-right" theme="light" />
+      
+      {/* ✨ Custom Styles */}
+      <style>{`
+        .bg-gradient-primary {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .hover-lift {
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                      box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important;
+        }
+        .transition-all {
+          transition: all 0.2s ease;
+        }
+        .tracking-wide {
+          letter-spacing: 0.05em;
+        }
+        .focus-ring:focus {
+          outline: none;
+          box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25);
+        }
+        .focus-ring-primary:focus {
+          box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25);
+        }
+        .hover-bg:hover {
+          background-color: rgba(102, 126, 234, 0.08) !important;
+        }
+        .sidebar-sticky {
+          position: sticky !important;
+          top: calc(1rem + 70px) !important;
+          z-index: 1020 !important;
+        }
+        /* Custom scrollbar for user list */
+        .border::-webkit-scrollbar {
+          width: 6px;
+        }
+        .border::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 3px;
+        }
+        .border::-webkit-scrollbar-track {
+          background: transparent;
+        }
+      `}</style>
+    </div>
   );
 }
