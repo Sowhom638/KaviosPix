@@ -456,16 +456,7 @@ const GoolgeLogin = (props) => {
           <p className="kp-hero-sub">Create, manage, and share albums effortlessly. KaviosPix helps you keep your images, screenshots, and reference materials perfectly organized.</p>
           
           <div className="kp-hero-buttons">
-            <a href="#features" className="kp-btn-secondary">
-              Learn More
-            </a>
-          </div>
-
-          <div className="kp-divider">
-            <hr /><span>or sign in with</span><hr />
-          </div>
-
-          <button
+			<button
             onClick={googleLogin}
             className="kp-google-btn"
             onMouseEnter={(e) => {
@@ -485,13 +476,9 @@ const GoolgeLogin = (props) => {
             </svg>
             Sign in with Google
           </button>
-
-          <div className="kp-mockup-container">
-            <img 
-              src="./assets/Dashboard.png" 
-              alt="KaviosPix Dashboard" 
-              className="kp-mockup"
-            />
+            <a href="#features" className="kp-btn-secondary">
+              Learn More
+            </a>
           </div>
         </div>
       </section>
