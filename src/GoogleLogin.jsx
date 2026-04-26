@@ -494,10 +494,10 @@ const GoolgeLogin = (props) => {
             {[
               { icon: "📁", title: "Smart Albums", desc: "Organize images into collections with custom tags, filters, and instant search." },
               { icon: "🔗", title: "Share & Collaborate", desc: "Generate shareable links and collaborate with your team in real-time." },
-              { icon: "️", title: "Cloud Sync", desc: "Access your albums from any device with automatic cloud synchronization." },
+              { icon: "️☁️", title: "Cloud Sync", desc: "Access your albums from any device with automatic cloud synchronization." },
               { icon: "🔒", title: "Secure & Private", desc: "Your data stays yours with end-to-end encryption and granular permissions." },
               { icon: "⚡", title: "Lightning Fast", desc: "Optimized for speed with instant loading and smooth scrolling." },
-              { icon: "", title: "Beautiful UI", desc: "A clean, modern interface that makes managing your collections enjoyable." }
+              { icon: "💻", title: "Beautiful UI", desc: "A clean, modern interface that makes managing your collections enjoyable." }
             ].map((feature, idx) => (
               <div className="kp-feature-card" key={idx}>
                 <div className="kp-feature-icon">{feature.icon}</div>
