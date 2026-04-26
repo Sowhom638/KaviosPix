@@ -446,12 +446,6 @@ const GoolgeLogin = (props) => {
             </div>
             KaviosPix
           </a>
-          <ul className="kp-nav-links">
-            <li><a href="#features">Features</a></li>
-            <li><a href="#stats">Stats</a></li>
-            <li><a href="#cta">Pricing</a></li>
-            <li><a href="#" className="kp-btn-primary" style={{padding: '0.5rem 1.25rem', fontSize: '0.9rem'}}>Launch App</a></li>
-          </ul>
         </div>
       </nav>
 
@@ -462,10 +456,6 @@ const GoolgeLogin = (props) => {
           <p className="kp-hero-sub">Create, manage, and share albums effortlessly. KaviosPix helps you keep your images, screenshots, and reference materials perfectly organized.</p>
           
           <div className="kp-hero-buttons">
-            <a href="#cta" className="kp-btn-primary">
-              Get Started Free
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
             <a href="#features" className="kp-btn-secondary">
               Learn More
             </a>
@@ -498,7 +488,7 @@ const GoolgeLogin = (props) => {
 
           <div className="kp-mockup-container">
             <img 
-              src="https://placehold.co/900x500/f8f7ff/6c5ce7?text=KaviosPix+Dashboard" 
+              src="./assets/Dashboard.png" 
               alt="KaviosPix Dashboard" 
               className="kp-mockup"
             />
@@ -532,30 +522,6 @@ const GoolgeLogin = (props) => {
         </div>
       </section>
 
-      {/* Stats */}
-      <section id="stats" className="kp-section kp-stats">
-        <div className="container">
-          <div className="kp-stats-grid">
-            <div>
-              <div className="kp-stat-number">50K+</div>
-              <div className="kp-stat-label">Active Users</div>
-            </div>
-            <div>
-              <div className="kp-stat-number">2M+</div>
-              <div className="kp-stat-label">Albums Created</div>
-            </div>
-            <div>
-              <div className="kp-stat-number">99.9%</div>
-              <div className="kp-stat-label">Uptime</div>
-            </div>
-            <div>
-              <div className="kp-stat-number">4.9★</div>
-              <div className="kp-stat-label">User Rating</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section id="cta" className="kp-cta">
         <div className="container">
@@ -570,18 +536,6 @@ const GoolgeLogin = (props) => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="kp-footer">
-        <div className="container">
-          <p style={{marginBottom: '0.75rem'}}>&copy; {new Date().getFullYear()} KaviosPix. All rights reserved.</p>
-          <div>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Contact</a>
-            <a href="#">Support</a>
-          </div>
-        </div>
-      </footer>
     </>
   );
 };
